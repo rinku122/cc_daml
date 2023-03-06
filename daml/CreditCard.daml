@@ -1,0 +1,69 @@
+module CreditCard where
+
+type CreditCardId = ContractId CreditCard
+type CreditCardApplicationId = ContractId CreditCardApplication
+type DeclineCreditCardApplicationId = ContractId DeclineCreditCardApplication
+
+
+template CreditCard
+  with
+    owner : Party
+    underwriter : Party
+    ccType : Text
+    limit : Decimal
+    name : Text
+    expiry : Date
+    number :Int
+    currency : Text
+    balance : Decimal
+  where
+    signatory owner, underwriter
+    ensure underwriter /= owner
+       
+
+template CreditCardApplication
+  with
+    owner : Party
+    underwriter : Party
+    ccType : Text 
+    name : Text   
+    currency : Text
+  where
+    signatory owner
+    observer owner
+    choice IssueCreditCard : CreditCardId
+      with
+        limit : Decimal
+        expiry : Date
+        number : Int
+      controller underwriter
+      do create CreditCard with
+          balance = 0.0
+          ..
+    choice DeclineApplication : DeclineCreditCardApplicationId
+      with
+        reason : Text
+        suggestedCcType : Text
+      controller underwriter
+      do create DeclineCreditCardApplication with ..
+
+
+template DeclineCreditCardApplication
+  with
+    owner : Party
+    underwriter : Party
+    ccType : Text 
+    name : Text   
+    currency : Text
+    reason : Text
+    suggestedCcType : Text
+  where
+    signatory owner, underwriter  
+    choice NewCreditCardApplication : CreditCardApplicationId
+      controller owner
+      do create CreditCardApplication with
+          ccType = suggestedCcType
+          ..
+    
+          
+      
